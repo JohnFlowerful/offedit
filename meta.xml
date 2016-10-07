@@ -1,0 +1,7 @@
+<meta>
+	<info name="In-Game map editor" author="OffRoader23 and JohnFlower" version="2.0" type="misc" />
+	<script src="offedit.lua" type="server"/>
+	<script src="offedit_cl.lua" type="client"/>
+	<script src="matrix.lua" type="client"/>
+	<config src="help.xml" type="client"/>
+</meta>
