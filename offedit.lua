@@ -555,7 +555,7 @@ addCommandHandler('saveasmap',
 								xmlNodeSetAttribute(xmlVehiclesBranch, 'col2', col2)
 								xmlNodeSetAttribute(xmlVehiclesBranch, 'col3', col3)
 								xmlNodeSetAttribute(xmlVehiclesBranch, 'col4', col4)
-							elseif tonumber(model) < 400 then
+							elseif tonumber(model) <= 312 then
 								xmlPedBranch = xmlCreateChild(file, 'ped')
 								xmlNodeSetAttribute(xmlPedBranch, 'id', i)
 								xmlNodeSetAttribute(xmlPedBranch, 'posX', x)
