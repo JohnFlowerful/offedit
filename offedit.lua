@@ -885,6 +885,7 @@ addEventHandler('onPlayerJoin', root,
 
 addEventHandler('onPlayerQuit', root,
 	function ()
+		saveObject(source)
 		setElementData(source, 'builder', false)
 	end
 )
