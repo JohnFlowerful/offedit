@@ -174,7 +174,11 @@ addCommandHandler('mloop',
 			local angle
 			local newi
 			local loops = tonumber(loops) or 1
-			local rota = tonumber(rota)*(math.pi/180)
+			if rota then 
+				rota = rota*(math.pi/180)
+			else 
+				rota = 0
+			end
 			if radi and pieces and offset then
 				radi = tonumber(radi)
 				pieces = tonumber(pieces)
@@ -194,14 +198,14 @@ addCommandHandler('mloop',
 						local newx = orx + radi*math.sin(radians)*math.cos(rota)+(offset/2)*math.cos(radians/(2*loops))*-math.sin(rota)
 						local newy = ory +(offset/2)*math.cos(radians/(2*loops))*math.cos(rota)+radi*math.sin(radians)*math.sin(rota)
 						local newz = orz + radi*-math.cos(radians)
-						angle =(((360/pieces)* loops)* newi)
+						angle = (((360/pieces)* loops)* newi)
 						if angle <= 359.9999999999999999999999999 then
 							newi = newi + 1
 						end
-						angle =(((360/pieces)* loops)* newi)
+						angle = (((360/pieces)* loops)* newi)
 						if angle >= 360 then
-							newi = -1
-							angle =(((360/pieces)* loops)* newi)
+							newi = 0
+							angle = (((360/pieces)* loops)* newi)
 						end
 						if rotaxis == 'x' then
 							newrotx = angle
@@ -216,11 +220,13 @@ addCommandHandler('mloop',
 							newrotx = rx --+((radians)-math.cos(rota)*spiralp*weight)
 							newroty = -angle
 						end
+						newz = newz + radi
 						playerobj[player] = createObject(model, newx, newy, newz, newrotx, newroty, rz)
 						setElementInterior(playerobj[player], int)
 						setElementDimension(playerobj[player], dim)
 						triggerClientEvent('updateGridlines', root, playerobj[player], player)
 					end
+					saveObject(player)
 				end
 				if not playerobj[player] then
 					outputChatBox('Failed to stack object.  Make sure you have one selected.', player)
