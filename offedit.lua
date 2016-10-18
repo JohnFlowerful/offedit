@@ -47,9 +47,9 @@ addCommandHandler('mcreate',
 					if type(tonumber(var)) == 'number' then
 						local var = tonumber(var)
 						if var > 611 and var <= 20000 or (var <= 372 and var >= 321) then --objects
-							playerobj[player] = createObject(var, x + 5, y + 5, z - 1)
+							playerobj[player] = createObject(var, x + 2, y + 2, z - 1)
 						elseif var <= 611 and var >= 400 then --vehicles
-							playerobj[player] = createVehicle(var, x + 5, y + 5, z + 1)
+							playerobj[player] = createVehicle(var, x + 2, y + 2, z + 1)
 						elseif var <= 312 then --peds
 							playerobj[player] = createPed(var, x + 2, y + 2, z + 1)
 						end
@@ -63,7 +63,7 @@ addCommandHandler('mcreate',
 						else
 							local veh = getVehicleModelFromName(var)
 							if veh then
-								playerobj[player] = createVehicle(veh, x + 5, y + 5, z + 1)
+								playerobj[player] = createVehicle(veh, x + 2, y + 2, z + 1)
 							end
 						end
 					end
