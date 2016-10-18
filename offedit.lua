@@ -5,9 +5,7 @@ local mapinfo = {}
 objects = {}
 
 local nyiggas = {
-	'A25B7706EE8A96E9CD6F9E66AC42B343', --ishi
-	'0A6F108840592C1C42C517E9BBFE2082',	--medhat fgt
-	'64EDE2132C212239D47496DDB0B98893'	--Aison
+	'A25B7706EE8A96E9CD6F9E66AC42B343' --ishi
 }
 
 addCommandHandler('guestb',
