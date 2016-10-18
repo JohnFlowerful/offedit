@@ -2,6 +2,8 @@ local invalidmodels
 local playerobj = {}
 local maxobjects = 1500
 local mapinfo = {}
+local minc = {}
+local mrinc = {}
 objects = {}
 
 local nyiggas = {
@@ -67,6 +69,7 @@ addCommandHandler('mcreate',
 					end
 					
 					if playerobj[player] then
+						bindMovementKeys(player)
 						setElementInterior(playerobj[player], int)
 						setElementDimension(playerobj[player], dim)
 						if getElementType(playerobj[player]) == 'vehicle' or getElementType(playerobj[player]) == 'ped' then
@@ -253,8 +256,46 @@ addCommandHandler('mcol',
 	end
 )
 
-function _moveObject(player, command, value)
-	if playerobj[player] and type(tonumber(value)) == 'number' then
+local movementkeys = {
+	num_4 = {axis = 'ox', direction = 1},
+	num_6 = {axis = 'ox', direction = -1},
+	num_8 = {axis = 'oy', direction = 1},
+	num_2 = {axis = 'oy', direction = -1},
+	num_add = {axis = 'oz', direction = 1},
+	num_sub = {axis = 'oz', direction = -1},
+	num_7 = {axis = 'rx', direction = 1},
+	num_9 = {axis = 'rx', direction = -1},
+	num_1 = {axis = 'ry', direction = 1},
+	num_3 = {axis = 'ry', direction = -1},
+	num_div = {axis = 'rz', direction = 1},
+	num_mul = {axis = 'rz', direction = -1}
+}
+
+function bindMovementKeys(player)
+	for k,_ in pairs (movementkeys) do
+		bindKey(player, k, 'down', movementkeys[k].axis, 'false '..movementkeys[k].direction)
+	end
+	bindKey(player, 'num_5', 'down',  changeInc)
+end
+
+function unbindMovementKeys(player)
+	for k,_ in pairs (movementkeys) do
+		unbindKey(player, k, 'down', movementkeys[k].axis)
+	end
+	unbindKey(player, 'num_5', 'down',  changeInc)
+end
+
+function _moveObject(player, command, value, direction)
+	if playerobj[player] then
+		if value == 'false' then
+			local startswith = command:sub(1,1)
+			if startswith:lower() == 'o' then
+				value = minc[player] * direction
+			else
+				value = mrinc[player] * direction
+			end
+		end
+		
 		local x, y, z = getElementPosition(playerobj[player])
 		local orx, ory, orz = getElementRotation(playerobj[player])
 		local rx, ry, rz = 0, 0, 0
@@ -300,6 +341,34 @@ for _,v in pairs (movementcommands) do
 	addCommandHandler(v, _moveObject)
 end
 
+function setInc(player, command, value)
+	minc[player] = tonumber(value)
+	outputChatBox('Movement incriments set to ' ..value.. '', player)
+end
+addCommandHandler('minc', setInc)
+
+function setRInc(player, command, value)
+	mrinc[player] = tonumber(value)
+	outputChatBox('Rotational incriments set to ' ..value.. '', player)
+end
+addCommandHandler('mrinc', setRInc)
+
+function changeInc(player)
+	if minc[player] == 0.1 then	
+		minc[player] = 0.01
+		outputChatBox('Incriments set to 0.01', player)
+	elseif minc[player] == 0.01 then
+		minc[player] = 0.005
+		outputChatBox('Incriments set to 0.005', player)
+	elseif minc[player] == 0.005 then 
+		minc[player] = 0.1
+		outputChatBox('Incriments set to 0.1', player)
+	else
+		minc[player] = 0.1
+		outputChatBox('Incriments set to 0.1', player)
+	end
+end
+
 addCommandHandler('mscale',
 	function (player, command, scalex, scaley, scalez)
 		if tonumber(scalex) then
@@ -342,6 +411,7 @@ function destroyObject(player, command, id)
 		else
 			if playerobj[player] then
 				element = playerobj[player]
+				unbindMovementKeys(player)
 				for i=0,maxobjects do
 					if objects[i] == playerobj[player] then
 						num = i
@@ -397,6 +467,7 @@ function saveObject(player, command)
 			end
 			objects[id] = playerobj[player]
 			outputChatBox('Object saved as ID: ' ..id, player)
+			unbindMovementKeys(player)
 			triggerClientEvent('updateGridlines', root, playerobj[player], player)
 			playerobj[player] = false
 		end
@@ -414,7 +485,8 @@ addCommandHandler('msel',
 				saveObject(player)
 			end
 			if objects[id] then 
-				playerobj[player] = objects[id] 
+				playerobj[player] = objects[id]
+				bindMovementKeys(player)
 				triggerClientEvent('updateGridlines', root, playerobj[player], player)
 				outputChatBox('Object ID selected: ' ..id.. '', player)
 			end
@@ -674,6 +746,7 @@ function clearObjects(player)
 			if playerobj[v] then destroyElement(playerobj[v]) end
 			triggerClientEvent('updateGridlines', root)
 			playerobj[v] = false
+			unbindMovementKeys(v)
 		end
 		outputChatBox('Map cleared.', player)
 	else 
@@ -866,6 +939,12 @@ addEventHandler('onResourceStart', resourceRoot,
 		local buffer = fileRead(file, size)
 		invalidmodels = fromJSON(buffer)
 		fileClose(file)
+		
+		for k,v in ipairs(getElementsByType('player')) do
+			mrinc[v] = 15
+			minc[v] = 0.1
+		end
+		outputChatBox('offedit increments have been reset.')
 	end
 )
 
@@ -878,6 +957,9 @@ addEventHandler('onPlayerJoin', root,
 				setElementData(source, 'builder', true)
 			end
 		end
+		mrinc[source] = 15
+		minc[source] = 0.1
+		outputChatBox('offedit increments set: minc = 0.1  mrinc = 15', source)
 	end
 )
 
