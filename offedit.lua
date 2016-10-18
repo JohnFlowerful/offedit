@@ -4,7 +4,8 @@ local maxobjects = 1500
 local mapinfo = {}
 local minc = {}
 local mrinc = {}
-objects = {}
+local objects = {}
+local resourcemaps = {}
 
 local nyiggas = {
 	'A25B7706EE8A96E9CD6F9E66AC42B343' --ishi
@@ -910,6 +911,69 @@ function loadMapLua(player, mapname)
 	end
 end
 
+function loadMap(mapname, int, dim)
+	local resource = getResourceName(sourceResource)
+	if not resourcemaps[resource] then
+		resourcemaps[resource] = {}
+	end
+	
+	if fileExists('maps/'..mapname..'.json') then
+		unloadMap(mapname, resource)
+		resourcemaps[resource][mapname] = {}
+		
+		outputDebugString('(ADMIN.offedit) resource '..resource..' loaded map '..mapname)
+		local file = fileOpen('maps/'..mapname..'.json')
+		local size = fileGetSize(file)
+		local buffer = fileRead(file, size)
+		local tempdata = fromJSON(buffer)
+		fileClose(file)
+		for k,v in pairs (tempdata) do
+			if k ~= 'info' then
+				local id = tonumber(k)
+				local ids = tostring(k)
+				local x, y, z, rx, ry, rz = unpack(tempdata[ids]['pos'])
+				if tempdata[ids]['type'] == 'vehicle' then
+					resourcemaps[resource][mapname][id] = createVehicle(tempdata[ids]['model'], x, y, z, rx, ry, rz)
+					setVehicleColor(resourcemaps[resource][mapname][id], unpack(tempdata[ids]['colour']))
+				elseif tempdata[ids]['type'] == 'ped' then
+					resourcemaps[resource][mapname][id] = createPed(tempdata[ids]['model'], x, y, z, rz, true)
+				elseif tempdata[ids]['type'] == 'water' then
+					vertices = tempdata[ids]['vertices']
+					resourcemaps[resource][mapname][id] = createWater(vertices[1].x, vertices[1].y, vertices[1].z, vertices[2].x, vertices[2].y, vertices[2].z, vertices[3].x, vertices[3].y, vertices[3].z, vertices[4].x, vertices[4].y, vertices[4].z)
+				else
+					resourcemaps[resource][mapname][id] = createObject(tempdata[ids]['model'], x, y, z, rx, ry, rz)
+					scalex, scaley, scalez = unpack(tempdata[ids]['scale'])
+					setObjectScale(resourcemaps[resource][mapname][id], scalex, scaley, scalez)
+				end
+				setElementCollisionsEnabled(resourcemaps[resource][mapname][id], tempdata[ids]['col'])
+				if tempdata[ids]['int'] and tempdata[ids]['dim'] and not (int and dim) then
+					setElementInterior(resourcemaps[resource][mapname][id], tempdata[ids]['int'])
+					setElementDimension(resourcemaps[resource][mapname][id], tempdata[ids]['dim'])
+				elseif int and dim then
+					setElementInterior(resourcemaps[resource][mapname][id], int)
+					setElementDimension(resourcemaps[resource][mapname][id], dim)
+				end
+			end
+		end
+		tempdata = {}
+	end
+end
+
+function unloadMap(mapname, resource)
+	if not resource then
+		resource = getResourceName(sourceResource)
+	end
+	if resourcemaps[resource][mapname] then
+		for i=1,#resourcemaps[resource][mapname] do
+			local element = resourcemaps[resource][mapname][i]
+			if isElement(element) then
+				destroyElement(element)
+			end
+		end
+		outputDebugString('(ADMIN.offedit) resource '..resource..' unloaded map '..mapname)
+	end
+end
+
 function getTimeStamp ()
 	local time = getRealTime()
 	return (time.year + 1900)..'-'..(time.month+1)..'-'..time.monthday..' '..time.hour..':'..time.minute..':'..time.second
@@ -947,6 +1011,23 @@ addEventHandler('onResourceStart', resourceRoot,
 			minc[v] = 0.1
 		end
 		outputChatBox('offedit increments have been reset.')
+	end
+)
+
+addEventHandler('onResourceStop', root,
+	function (resource)
+		local resource = getResourceName(resource)
+		if resourcemaps[resource] then
+			for k in pairs (resourcemaps[resource]) do
+				for i=1,#resourcemaps[resource][k] do
+					local element = resourcemaps[resource][k][i]
+					if isElement(element) then
+						destroyElement(element)
+					end
+				end
+				outputDebugString('(ADMIN.offedit) resource '..resource..' unloaded map '..k)
+			end
+		end
 	end
 )
 

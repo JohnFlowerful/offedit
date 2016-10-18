@@ -4,4 +4,7 @@
 	<script src="offedit_cl.lua" type="client"/>
 	<script src="matrix.lua" type="client"/>
 	<config src="help.xml" type="client"/>
+	
+	<export function="loadMap" type="server"/>
+	<export function="unloadMap" type="server"/>
 </meta>
