@@ -7,25 +7,8 @@ local attachedToElements = {}
 
 addEvent("updateGridlines", true)
 addEventHandler("updateGridlines", root, 
-	function(element, player)
-		if element and player then
-			local inTable = false
-			for k,v in ipairs (attachedToElements) do
-				if element == v.elem and player == v.user then
-					table.remove(attachedToElements, k)
-					inTable = true
-				end
-			end
-			if inTable == false then
-				table.insert(attachedToElements, {['elem'] = element, ['user'] = player})
-			end
-		else
-			for k,v in ipairs (attachedToElements) do
-				if not isElement(v.elem) then
-					table.remove(attachedToElements, k)
-				end
-			end
-		end
+	function(tbl)
+		attachedToElements = tbl
 	end
 )
 
@@ -41,16 +24,16 @@ addCommandHandler('togglelines',
 
 function renderGridlines()
 	if RENDER then
-		for k,v in ipairs (attachedToElements) do
-			if not isElement(v.elem) then return end
-			if getElementDimension(v.elem) ~= getElementDimension(localPlayer) then return end
+		for k in pairs (attachedToElements) do
+			if not isElement(k) then return end
+			if getElementDimension(k) ~= getElementDimension(localPlayer) then return end
 			
-			local x, y, z = getElementPosition(v.elem)
+			local x, y, z = getElementPosition(k)
 			if not x then return end
 
-			local minX, minY, minZ, maxX, maxY, maxZ = getElementBoundingBox(v.elem)
+			local minX, minY, minZ, maxX, maxY, maxZ = getElementBoundingBox(k)
 			if not minX then
-				local radius = getElementRadius(v.elem)
+				local radius = getElementRadius(k)
 				if radius then
 					minX, minY, minZ, maxX, maxY, maxZ = -radius, -radius, -radius, radius, radius, radius
 				end
@@ -61,8 +44,8 @@ function renderGridlines()
 			--Work out our line thickness
 			thickness = (100/getDistanceBetweenPoints3D(camX,camY,camZ,x,y,z)) * MAX_THICKNESS
 			--
-			local elementMatrix = (getElementMatrix(v.elem) ) 
-									and matrix(getElementMatrix(v.elem))
+			local elementMatrix = (getElementMatrix(k)) 
+									and matrix(getElementMatrix(k))
 			if not elementMatrix then
 				--Make them into absolute coords
 				minX, minY, minZ = minX + x,minY + y,minZ + z

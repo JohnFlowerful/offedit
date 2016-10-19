@@ -5,6 +5,7 @@ local mapinfo = {}
 local minc = {}
 local mrinc = {}
 local objects = {}
+local gridlines = {}
 local resourcemaps = {}
 
 local nyiggas = {
@@ -76,7 +77,7 @@ addCommandHandler('mcreate',
 						if getElementType(playerobj[player]) == 'vehicle' or getElementType(playerobj[player]) == 'ped' then
 							setElementFrozen(playerobj[player], true)
 						end
-						triggerClientEvent('updateGridlines', root, playerobj[player], player)
+						updateGridlines(playerobj[player], true)
 					else
 						outputChatBox(var.. ' is not a valid model ID.', player)
 					end
@@ -152,10 +153,12 @@ addCommandHandler('mclone',
 							end
 							setElementInterior(playerobj[player], int)
 							setElementDimension(playerobj[player], dim)
-							triggerClientEvent('updateGridlines', root, playerobj[player], player)
+							updateGridlines(playerobj[player], false)
 						end
 					end
-					if not playerobj[player] then
+					if playerobj[player] then
+						updateGridlines(playerobj[player], true)
+					else
 						outputChatBox('Failed to clone model. Make sure you have one selected.', player)
 					end
 				else
@@ -226,9 +229,8 @@ addCommandHandler('mloop',
 						playerobj[player] = createObject(model, newx, newy, newz, newrotx, newroty, rz)
 						setElementInterior(playerobj[player], int)
 						setElementDimension(playerobj[player], dim)
-						triggerClientEvent('updateGridlines', root, playerobj[player], player)
+						updateGridlines(playerobj[player], true)
 					end
-					saveObject(player)
 				end
 				if not playerobj[player] then
 					outputChatBox('Failed to stack object.  Make sure you have one selected.', player)
@@ -432,7 +434,7 @@ function destroyObject(player, command, id)
 			end
 			destroyElement(element)
 			if element == playerobj[player] then
-				triggerClientEvent('updateGridlines', root)
+				updateGridlines(playerobj[player], true)
 				playerobj[player] = false
 			end
 		end
@@ -469,7 +471,7 @@ function saveObject(player, command)
 			objects[id] = playerobj[player]
 			outputChatBox('Object saved as ID: ' ..id, player)
 			unbindMovementKeys(player)
-			triggerClientEvent('updateGridlines', root, playerobj[player], player)
+			updateGridlines(playerobj[player], false)
 			playerobj[player] = false
 		end
 	else 
@@ -488,7 +490,7 @@ addCommandHandler('msel',
 			if objects[id] then 
 				playerobj[player] = objects[id]
 				bindMovementKeys(player)
-				triggerClientEvent('updateGridlines', root, playerobj[player], player)
+				updateGridlines(playerobj[player], true)
 				outputChatBox('Object ID selected: ' ..id.. '', player)
 			end
 		else 
@@ -746,8 +748,10 @@ function clearObjects(player)
 		objects = {}
 		local players = getElementsByType('player')
 		for k,v in ipairs (players) do
-			if playerobj[v] then destroyElement(playerobj[v]) end
-			triggerClientEvent('updateGridlines', root)
+			if playerobj[v] then
+				updateGridlines(playerobj[v], false)
+				destroyElement(playerobj[v])
+			end
 			playerobj[v] = false
 			unbindMovementKeys(v)
 		end
@@ -821,6 +825,14 @@ addCommandHandler('convertmap',
 	end
 )
 
+function updateGridlines(element, state)
+	if state == true then
+		gridlines[element] = true
+	else
+		gridlines[element] = nil
+	end
+	triggerClientEvent('updateGridlines', root, gridlines)
+end
 
 function saveMapJson(player, mapname)
 	if hasPerms(player) then 
