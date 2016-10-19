@@ -87,8 +87,6 @@ addCommandHandler('mcreate',
 			else
 				outputChatBox('You are already editing an object.  Please save or delete to make another.', player)
 			end
-		else
-			outputChatBox('You do not have permission to build.', player)
 		end
 	end
 )
@@ -167,8 +165,6 @@ addCommandHandler('mclone',
 			else
 				outputChatBox('SYNTAX: /mclone times addX [addY addZ addRX addRY addRZ]', player)
 			end
-		else 
-			outputChatBox('You do not have permission to build.', player)
 		end
 	end
 )
@@ -238,8 +234,6 @@ addCommandHandler('mloop',
 			else
 				outputChatBox('SYNTAX: /mloop pieces radius offset [rotaxis loops rota]', player)
 			end
-		else 
-			outputChatBox('You do not have permission to build.', player)
 		end
 	end
 )
@@ -438,8 +432,6 @@ function destroyObject(player, command, id)
 				playerobj[player] = false
 			end
 		end
-	else 
-		outputChatBox('You do not have permission to build.', player)
 	end
 end
 addCommandHandler('mdestroy', destroyObject)
@@ -474,8 +466,6 @@ function saveObject(player, command)
 			updateGridlines(playerobj[player], false)
 			playerobj[player] = false
 		end
-	else 
-		outputChatBox('You do not have permission to build.', player)
 	end
 end
 addCommandHandler('msave', saveObject)
@@ -493,8 +483,6 @@ addCommandHandler('msel',
 				updateGridlines(playerobj[player], true)
 				outputChatBox('Object ID selected: ' ..id.. '', player)
 			end
-		else 
-			outputChatBox('You do not have permission to build.', player)
 		end
 	end
 )
@@ -529,8 +517,6 @@ addCommandHandler('minfo',
 				outputChatBox('Rot X: ' .. rx .. ' Rot Y: ' .. ry .. ' Rot Z: ' .. rz, player)
 				outputChatBox('Scale X: '..scalex..' Scale Y: '..scaley..' Scale Z: '..scalez, player)
 			end
-		else 
-			outputChatBox('You do not have permission to build.', player)
 		end
 	end
 )
@@ -644,8 +630,6 @@ function clearPlayerObjects(player)
 			unbindMovementKeys(v)
 		end
 		outputChatBox('Map cleared.')
-	else 
-		outputChatBox('You do not have permission to build.', player)
 	end
 end
 addCommandHandler('mclear', clearPlayerObjects)
@@ -743,8 +727,6 @@ addCommandHandler('savemap',
 	function (player, command, mapname)
 		if hasPerms(player) then
 			saveMap(player, mapname)
-		else 
-			outputChatBox('You do not have permission to build.', player)
 		end
 	end
 )
@@ -760,8 +742,6 @@ addCommandHandler('loadmap',
 			else
 				outputChatBox(mapname.. " doesn't exist", player)
 			end
-		else 
-			outputChatBox('You do not have permission to build.', player)
 		end
 	end
 )
@@ -925,6 +905,9 @@ function hasPerms(player)
 	local value = false
 	if hasObjectPermissionTo(player, 'function.kickPlayer', true) or getElementData(player, 'builder') == true or getElementData(player, 'staff') == true then
 		value = true
+	end
+	if value == false then
+		outputChatBox('You do not have permission to build.', player)
 	end
 	return value
 end
