@@ -601,20 +601,25 @@ addCommandHandler('saveasmap',
 addCommandHandler('mapinfo',
 	function(player, command, mapname)
 		if hasPerms(player) then
-			if fileExists('maps/' ..mapname..'.json') then
-				local file = fileOpen('maps/'..mapname..'.json')
-				local size = fileGetSize(file)
-				local buffer = fileRead(file, size)
-				local tempdata = fromJSON(buffer)
-				fileClose(file)
-				for k,v in pairs (tempdata) do
-					if k == 'info' then
-						outputChatBox('Creator: '..tempdata[k]['creator']..' - Serial: '..tempdata[k]['serial']..' - IP: '..tempdata[k]['ip']..' - Time: '..tempdata[k]['time'], player)
-					end
+			local info = false
+			if mapname then
+				if fileExists('maps/' ..mapname..'.json') then
+					local file = fileOpen('maps/'..mapname..'.json')
+					local size = fileGetSize(file)
+					local buffer = fileRead(file, size)
+					local tempdata = fromJSON(buffer)
+					fileClose(file)
+					info = tempdata.info
+					tempdata = {}
+				else
+					outputChatBox(mapname..' does not exist', player)
 				end
-				tempdata = {}
 			else
-				outputChatBox(mapname..' does not exist', player)
+				info = mapinfo
+			end
+			
+			if info then
+				outputChatBox('Creator: '..info.creator..' - Serial: '..info.serial..' - IP: '..info.ip..' - Time: '..info.time, player)
 			end
 		else
 			return outputChatBox ('#FA1464Only administrators can use this command', player, 255, 255, 255, true)
@@ -852,6 +857,7 @@ function loadMap(mapname, tbl, int, dim)
 			end
 		end
 	end
+	mapinfo = deepcopy(tempdata.info)
 	tempdata = {}
 end
 
@@ -921,6 +927,22 @@ function hasPerms(player)
 		value = true
 	end
 	return value
+end
+
+-- http://lua-users.org/wiki/CopyTable
+function deepcopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[deepcopy(orig_key)] = deepcopy(orig_value)
+        end
+        setmetatable(copy, deepcopy(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
 end
 
 addEventHandler('onResourceStart', resourceRoot,

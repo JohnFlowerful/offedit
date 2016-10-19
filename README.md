@@ -20,7 +20,7 @@
 /minfo [ID]  
 /savemap mapname  
 /loadmap mapname  
-/mapinfo mapname  
+/mapinfo [mapname]  
 /mclear  
 
 
