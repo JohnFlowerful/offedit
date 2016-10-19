@@ -861,8 +861,10 @@ function loadMapLua(player, mapname)
 	end
 end
 
-function loadResourceMap(mapname, int, dim)
-	local resource = getResourceName(sourceResource)
+function loadResourceMap(mapname, int, dim, resource)
+	if sourceResource then
+		resource = getResourceName(sourceResource)
+	end
 	if not resourcemaps[resource] then
 		resourcemaps[resource] = {}
 	end
@@ -952,6 +954,17 @@ addEventHandler('onResourceStart', resourceRoot,
 			minc[v] = 0.1
 		end
 		outputChatBox('offedit increments have been reset.')
+		
+		local file = fileOpen('resourcemaps.json')
+		local size = fileGetSize(file)
+		local buffer = fileRead(file, size)
+		local maps = fromJSON(buffer)
+		fileClose(file)
+		for k,_ in pairs (maps) do
+			for _,v in pairs (maps[k]) do
+				loadResourceMap(v, 0, 0, k)
+			end
+		end
 	end
 )
 
@@ -969,6 +982,21 @@ addEventHandler('onResourceStop', root,
 				outputDebugString('(ADMIN.offedit) resource '..resource..' unloaded map '..k)
 			end
 		end
+	end
+)
+
+addEventHandler('onResourceStop', resourceRoot,
+	function (resource)
+		local maps = {}
+		for k in pairs (resourcemaps) do
+			maps[k] = {}
+			for k2 in pairs (resourcemaps[k]) do
+				table.insert(maps[k], k2)
+			end
+		end
+		local file = fileCreate('resourcemaps.json')
+		fileWrite(file, toJSON(maps))
+		fileClose(file) 
 	end
 )
 

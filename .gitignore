@@ -38,6 +38,7 @@ Thumbs.db
 
 # Project speific #
 ###################
+resourcemaps.json
 maps/*.json
 maps/*.o23
 maps/*.map
