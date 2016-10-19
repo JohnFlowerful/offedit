@@ -535,69 +535,6 @@ addCommandHandler('minfo',
 	end
 )
 
-addCommandHandler('savemap', 
-	function (player, command, mapname)
-		if hasPerms(player) then 
-			if mapname then
-				if not string.find(mapname, '%W') then
-					local tempdata = {} 
-					tempdata['info'] = {}
-					tempdata['info']['creator'] = getPlayerName(player)
-					tempdata['info']['serial'] = getPlayerSerial(player)
-					tempdata['info']['ip'] = getPlayerIP(player)
-					tempdata['info']['time'] = getTimeStamp()
-					for i=0,#objects do
-						if objects[i] then
-							tempdata[i] = {}
-							tempdata[i]['model'] = getElementModel(objects[i])
-							tempdata[i]['col'] = getElementCollisionsEnabled(objects[i])
-							tempdata[i]['int'] = getElementInterior(objects[i])
-							tempdata[i]['dim'] = getElementDimension(objects[i])
-							local x, y, z = getElementPosition(objects[i])
-							local rx, ry, rz = getElementRotation(objects[i])
-							tempdata[i]['pos'] = {x, y, z, rx, ry, rz}
-							
-							local elementtype = getElementType(objects[i])
-							if elementtype == 'vehicle' then
-								tempdata[i]['type'] = 'vehicle'
-								local colours = {getVehicleColor(objects[i], true)}
-								for k=1,12 do
-									if not colours[k] then colours[k] = 255 end
-								end
-								tempdata[i]['colour'] = colours
-							elseif elementtype == 'ped' then
-								tempdata[i]['type'] = 'ped'
-							elseif elementtype == 'water' then
-								tempdata[i]['vertices'] = {}
-								for j=1,4 do
-									local x, y, z = getWaterVertexPosition(objects[i], j)
-									table.insert(tempdata[i]['vertices'], j, {['x'] = x, ['y'] = y, ['z'] = z})
-								end
-								tempdata[i]['type'] = 'water'
-							else
-								local scalex, scaley, scalez = getObjectScale(objects[i])
-								tempdata[i]['scale'] = {scalex, scaley, scalez}
-								tempdata[i]['type'] = 'object'
-							end
-						end
-					end
-					local file = fileCreate('maps/'..mapname.. '.json')
-					fileWrite(file, toJSON(tempdata))
-					fileClose(file)  
-					tempdata = {}
-					outputChatBox('Saved map as ' .. mapname, player)
-				else
-					outputChatBox('Invalid map name.', player)
-				end
-			else
-				outputChatBox('SYNTAX: /savemap mapname', player)
-			end
-		else 
-			outputChatBox('You do not have permission to build.', player)
-		end
-	end
-)
-
 addCommandHandler('saveasmap',
 	function (player, command, mapname)
 		if hasPerms(player) then 
@@ -661,59 +598,6 @@ addCommandHandler('saveasmap',
 	end
 )
 
-addCommandHandler('loadmap', 
-	function (player, command, mapname, int, dim)
-		if hasPerms(player) then 
-			if fileExists('maps/'..mapname..'.json') then
-				local name = getPlayerName(player)
-				clearObjects(player)
-				outputChatBox('Map loaded: ' ..mapname)
-				outputDebugString('(ADMIN.offedit) '..name..' loaded map '..mapname)
-				local file = fileOpen('maps/'..mapname..'.json')
-				local size = fileGetSize(file)
-				local buffer = fileRead(file, size)
-				local tempdata = fromJSON(buffer)
-				fileClose(file)
-				for k,v in pairs (tempdata) do
-					if k ~= 'info' then
-						local id = tonumber(k)
-						local ids = tostring(k)
-						local x, y, z, rx, ry, rz = unpack(tempdata[ids]['pos'])
-						if tempdata[ids]['type'] == 'vehicle' then
-							objects[id] = createVehicle(tempdata[ids]['model'], x, y, z, rx, ry, rz)
-							setVehicleColor(objects[id], unpack(tempdata[ids]['colour']))
-						elseif tempdata[ids]['type'] == 'ped' then
-							objects[id] = createPed(tempdata[ids]['model'], x, y, z, rz, true)
-						elseif tempdata[ids]['type'] == 'water' then
-							vertices = tempdata[ids]['vertices']
-							objects[id] = createWater(vertices[1].x, vertices[1].y, vertices[1].z, vertices[2].x, vertices[2].y, vertices[2].z, vertices[3].x, vertices[3].y, vertices[3].z, vertices[4].x, vertices[4].y, vertices[4].z)
-						else
-							objects[id] = createObject(tempdata[ids]['model'], x, y, z, rx, ry, rz)
-							scalex, scaley, scalez = unpack(tempdata[ids]['scale'])
-							setObjectScale(objects[id], scalex, scaley, scalez)
-						end
-						setElementCollisionsEnabled(objects[id], tempdata[ids]['col'])
-						if tempdata[ids]['int'] and tempdata[ids]['dim'] and not (int and dim) then
-							setElementInterior(objects[id], tempdata[ids]['int'])
-							setElementDimension(objects[id], tempdata[ids]['dim'])
-						elseif int and dim then
-							setElementInterior(objects[id], int)
-							setElementDimension(objects[id], dim)
-						end
-					else
-						mapinfo = tempdata['info']
-					end
-				end
-				tempdata = {}
-			else
-				outputChatBox('Map ' ..mapname.. " failed to load. Perhaps it doesn't exist?", player)
-			end
-		else 
-			outputChatBox('You do not have permission to build.', player)
-		end
-	end
-)
-
 addCommandHandler('mapinfo',
 	function(player, command, mapname)
 		if hasPerms(player) then
@@ -738,7 +622,7 @@ addCommandHandler('mapinfo',
 	end
 )
 
-function clearObjects(player)
+function clearPlayerObjects(player)
 	if hasPerms(player) then 
 		for i=0,maxobjects do
 			if isElement(objects[i]) then
@@ -746,8 +630,7 @@ function clearObjects(player)
 			end
 		end
 		objects = {}
-		local players = getElementsByType('player')
-		for k,v in ipairs (players) do
+		for k,v in ipairs (getElementsByType('player')) do
 			if playerobj[v] then
 				updateGridlines(playerobj[v], false)
 				destroyElement(playerobj[v])
@@ -755,12 +638,12 @@ function clearObjects(player)
 			playerobj[v] = false
 			unbindMovementKeys(v)
 		end
-		outputChatBox('Map cleared.', player)
+		outputChatBox('Map cleared.')
 	else 
 		outputChatBox('You do not have permission to build.', player)
 	end
 end
-addCommandHandler('mclear', clearObjects)
+addCommandHandler('mclear', clearPlayerObjects)
 
 addCommandHandler('delmap', 
 	function (player, command, type, string)
@@ -814,17 +697,6 @@ addCommandHandler('delmap',
 	end
 )
 
-addCommandHandler('convertmap',
-	function (player, command, mapname)
-		if hasPerms(player) then 
-			loadMapLua(player, mapname)
-			saveMapJson(player, mapname)
-		else 
-			outputChatBox('You do not have permission to build.')
-		end
-	end
-)
-
 function updateGridlines(element, state)
 	if state == true then
 		gridlines[element] = true
@@ -832,57 +704,6 @@ function updateGridlines(element, state)
 		gridlines[element] = nil
 	end
 	triggerClientEvent('updateGridlines', root, gridlines)
-end
-
-function saveMapJson(player, mapname)
-	if hasPerms(player) then 
-		if mapname then
-			if not string.find(mapname, '%W') then
-				local tempdata = {} 
-				tempdata['info'] = {}
-				tempdata['info']['creator'] = getPlayerName(player)
-				tempdata['info']['serial'] = getPlayerSerial(player)
-				tempdata['info']['ip'] = getPlayerIP(player)
-				tempdata['info']['time'] = getTimeStamp()
-				for i=0,#objects do
-					if objects[i] then
-						tempdata[i] = {}
-						tempdata[i]['model'] = getElementModel(objects[i])
-						tempdata[i]['col'] = getElementCollisionsEnabled(objects[i])
-						local x, y, z = getElementPosition(objects[i])
-						local rx, ry, rz = getElementRotation(objects[i])
-						tempdata[i]['pos'] = {x, y, z, rx, ry, rz}
-
-						if getElementType(objects[i]) == 'vehicle' then
-							tempdata[i]['type'] = 'vehicle'
-							local colours = {getVehicleColor(objects[i], true)}
-							for k=1,12 do
-								if not colours[k] then colours[k] = 255 end
-							end
-							tempdata[i]['colour'] = colours
-						elseif getElementType(objects[i]) == 'ped' then
-							tempdata[i]['type'] = 'ped'
-						else
-							local scalex, scaley, scalez = getObjectScale(objects[i])
-							tempdata[i]['scale'] = {scalex, scaley, scalez}
-							tempdata[i]['type'] = 'object'
-						end
-					end
-				end
-				local file = fileCreate('maps/'..mapname.. '.json')
-				fileWrite(file, toJSON(tempdata))
-				fileClose(file)  
-				tempdata = {}
-				outputChatBox('Saved map as ' .. mapname, player)
-			else
-				outputChatBox('Invalid map name.', player)
-			end
-		else
-			outputChatBox('SYNTAX: /savemap mapname', player)
-		end
-	else 
-		outputChatBox('You do not have permission to build.', player)
-	end
 end
 
 function getPlayerFromPartialName(name)
@@ -902,76 +723,178 @@ function getPlayerFromPartialName(name)
 	end
 end
 
+addCommandHandler('convertmap',
+	function (player, command, mapname)
+		if hasPerms(player) then 
+			loadMapLua(player, mapname)
+			saveMap(player, mapname)
+		else 
+			outputChatBox('You do not have permission to build.')
+		end
+	end
+)
+
+addCommandHandler('savemap', 
+	function (player, command, mapname)
+		if hasPerms(player) then
+			saveMap(player, mapname)
+		else 
+			outputChatBox('You do not have permission to build.', player)
+		end
+	end
+)
+
+addCommandHandler('loadmap', 
+	function (player, command, mapname, int, dim)
+		if hasPerms(player) then
+			if fileExists('maps/'..mapname..'.json') then
+				clearPlayerObjects(player)
+				loadMap(mapname, objects, int or 0, dim or 0)
+				outputChatBox('Map loaded: ' ..mapname)
+				outputDebugString('(ADMIN.offedit) player '..getPlayerName(player)..' loaded map '..mapname)
+			else
+				outputChatBox(mapname.. " doesn't exist", player)
+			end
+		else 
+			outputChatBox('You do not have permission to build.', player)
+		end
+	end
+)
+
+function saveMap(player, mapname)
+	if mapname then
+		if not string.find(mapname, '%W') then
+			local tempdata = {} 
+			tempdata['info'] = {}
+			tempdata['info']['creator'] = getPlayerName(player)
+			tempdata['info']['serial'] = getPlayerSerial(player)
+			tempdata['info']['ip'] = getPlayerIP(player)
+			tempdata['info']['time'] = getTimeStamp()
+			for i=0,#objects do
+				if objects[i] then
+					tempdata[i] = {}
+					tempdata[i]['model'] = getElementModel(objects[i])
+					tempdata[i]['col'] = getElementCollisionsEnabled(objects[i])
+					tempdata[i]['int'] = getElementInterior(objects[i])
+					tempdata[i]['dim'] = getElementDimension(objects[i])
+					local x, y, z = getElementPosition(objects[i])
+					local rx, ry, rz = getElementRotation(objects[i])
+					tempdata[i]['pos'] = {x, y, z, rx, ry, rz}
+					
+					local elementtype = getElementType(objects[i])
+					if elementtype == 'vehicle' then
+						tempdata[i]['type'] = 'vehicle'
+						local colours = {getVehicleColor(objects[i], true)}
+						for k=1,12 do
+							if not colours[k] then colours[k] = 255 end
+						end
+						tempdata[i]['colour'] = colours
+					elseif elementtype == 'ped' then
+						tempdata[i]['type'] = 'ped'
+					elseif elementtype == 'water' then
+						tempdata[i]['vertices'] = {}
+						for j=1,4 do
+							local x, y, z = getWaterVertexPosition(objects[i], j)
+							table.insert(tempdata[i]['vertices'], j, {['x'] = x, ['y'] = y, ['z'] = z})
+						end
+						tempdata[i]['type'] = 'water'
+					else
+						local scalex, scaley, scalez = getObjectScale(objects[i])
+						tempdata[i]['scale'] = {scalex, scaley, scalez}
+						tempdata[i]['type'] = 'object'
+					end
+				end
+			end
+			local file = fileCreate('maps/'..mapname.. '.json')
+			fileWrite(file, toJSON(tempdata))
+			fileClose(file)  
+			tempdata = {}
+			outputChatBox('Saved map as ' .. mapname, player)
+		else
+			outputChatBox('Invalid map name.', player)
+		end
+	else
+		outputChatBox('SYNTAX: /savemap mapname', player)
+	end
+end
+	
+function loadMap(mapname, tbl, int, dim)
+	local file = fileOpen('maps/'..mapname..'.json')
+	local size = fileGetSize(file)
+	local buffer = fileRead(file, size)
+	local tempdata = fromJSON(buffer)
+	fileClose(file)
+	for k in pairs (tempdata) do
+		if k ~= 'info' then
+			local id = tonumber(k)
+			local ids = tostring(k)
+			local x, y, z, rx, ry, rz = unpack(tempdata[ids]['pos'])
+			if tempdata[ids]['type'] == 'vehicle' then
+				tbl[id] = createVehicle(tempdata[ids]['model'], x, y, z, rx, ry, rz)
+				setVehicleColor(tbl[id], unpack(tempdata[ids]['colour']))
+			elseif tempdata[ids]['type'] == 'ped' then
+				tbl[id] = createPed(tempdata[ids]['model'], x, y, z, rz, true)
+			elseif tempdata[ids]['type'] == 'water' then
+				vertices = tempdata[ids]['vertices']
+				tbl[id] = createWater(vertices[1].x, vertices[1].y, vertices[1].z, vertices[2].x, vertices[2].y, vertices[2].z, vertices[3].x, vertices[3].y, vertices[3].z, vertices[4].x, vertices[4].y, vertices[4].z)
+			else
+				tbl[id] = createObject(tempdata[ids]['model'], x, y, z, rx, ry, rz)
+				scalex, scaley, scalez = unpack(tempdata[ids]['scale'])
+				setObjectScale(tbl[id], scalex, scaley, scalez)
+			end
+			setElementCollisionsEnabled(tbl[id], tempdata[ids]['col'])
+			if tempdata[ids]['int'] and tempdata[ids]['dim'] and not (int and dim) then
+				setElementInterior(tbl[id], tempdata[ids]['int'])
+				setElementDimension(tbl[id], tempdata[ids]['dim'])
+			elseif int and dim then
+				setElementInterior(tbl[id], int)
+				setElementDimension(tbl[id], dim)
+			end
+		end
+	end
+	tempdata = {}
+end
+
 function loadMapLua(player, mapname)
 	if mapname then
 		if fileExists('maps/'..mapname..'.o23') then
-			local mFile = fileOpen('maps/'..mapname..'.o23')  
-			if mFile then   
-				clearObjects(player)
-				outputChatBox('Map loaded: ' ..mapname, player)  --output success
-				local buffer            					-- temporary the whola lua file
-				local filessize = fileGetSize (mFile) 		--get file size
-				buffer = fileRead(mFile, filessize)         -- read the file length
-				loadstring(buffer)()  						--load lua to string
-				fileClose(mFile)         -- close the file once we're done with it
-			end
-		else --if no such map
-			outputChatBox('Map ' ..mapname.. " failed to load. Perhaps it doesn't exist?", player) --output fail
+			clearPlayerObjects(player)
+			local file = fileOpen('maps/'..mapname..'.o23')   
+			local size = fileGetSize(file)
+			local buffer = fileRead(file, size)
+			objectid = {}
+			assert(loadstring(buffer))()
+			objects = objectid
+			fileClose(file)
+			outputChatBox('Map loaded: ' ..mapname)
+		else
+			outputChatBox(mapname.. " doesn't exist", player)
 		end 
 	else
 		outputChatBox('No map name specified.  Please use /loadmap <name>', player)
 	end
 end
 
-function loadMap(mapname, int, dim)
+function loadResourceMap(mapname, int, dim)
 	local resource = getResourceName(sourceResource)
 	if not resourcemaps[resource] then
 		resourcemaps[resource] = {}
 	end
 	
+	if resourcemaps[resource][mapname] then
+		unloadResourceMap(mapname, resource)
+	end
+	
 	if fileExists('maps/'..mapname..'.json') then
-		unloadMap(mapname, resource)
 		resourcemaps[resource][mapname] = {}
-		
+		loadMap(mapname, resourcemaps[resource][mapname], int, dim)
 		outputDebugString('(ADMIN.offedit) resource '..resource..' loaded map '..mapname)
-		local file = fileOpen('maps/'..mapname..'.json')
-		local size = fileGetSize(file)
-		local buffer = fileRead(file, size)
-		local tempdata = fromJSON(buffer)
-		fileClose(file)
-		for k,v in pairs (tempdata) do
-			if k ~= 'info' then
-				local id = tonumber(k)
-				local ids = tostring(k)
-				local x, y, z, rx, ry, rz = unpack(tempdata[ids]['pos'])
-				if tempdata[ids]['type'] == 'vehicle' then
-					resourcemaps[resource][mapname][id] = createVehicle(tempdata[ids]['model'], x, y, z, rx, ry, rz)
-					setVehicleColor(resourcemaps[resource][mapname][id], unpack(tempdata[ids]['colour']))
-				elseif tempdata[ids]['type'] == 'ped' then
-					resourcemaps[resource][mapname][id] = createPed(tempdata[ids]['model'], x, y, z, rz, true)
-				elseif tempdata[ids]['type'] == 'water' then
-					vertices = tempdata[ids]['vertices']
-					resourcemaps[resource][mapname][id] = createWater(vertices[1].x, vertices[1].y, vertices[1].z, vertices[2].x, vertices[2].y, vertices[2].z, vertices[3].x, vertices[3].y, vertices[3].z, vertices[4].x, vertices[4].y, vertices[4].z)
-				else
-					resourcemaps[resource][mapname][id] = createObject(tempdata[ids]['model'], x, y, z, rx, ry, rz)
-					scalex, scaley, scalez = unpack(tempdata[ids]['scale'])
-					setObjectScale(resourcemaps[resource][mapname][id], scalex, scaley, scalez)
-				end
-				setElementCollisionsEnabled(resourcemaps[resource][mapname][id], tempdata[ids]['col'])
-				if tempdata[ids]['int'] and tempdata[ids]['dim'] and not (int and dim) then
-					setElementInterior(resourcemaps[resource][mapname][id], tempdata[ids]['int'])
-					setElementDimension(resourcemaps[resource][mapname][id], tempdata[ids]['dim'])
-				elseif int and dim then
-					setElementInterior(resourcemaps[resource][mapname][id], int)
-					setElementDimension(resourcemaps[resource][mapname][id], dim)
-				end
-			end
-		end
-		tempdata = {}
+	else
+		outputDebugString('(ADMIN.offedit) resource '..source..' failed to load '..mapname, 2)
 	end
 end
 
-function unloadMap(mapname, resource)
+function unloadResourceMap(mapname, resource)
 	if not resource then
 		resource = getResourceName(sourceResource)
 	end
@@ -982,6 +905,7 @@ function unloadMap(mapname, resource)
 				destroyElement(element)
 			end
 		end
+		resourcemaps[resource][mapname] = nil
 		outputDebugString('(ADMIN.offedit) resource '..resource..' unloaded map '..mapname)
 	end
 end
