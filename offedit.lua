@@ -1,3 +1,5 @@
+local minc_default = 1
+local mrinc_default = 15
 local invalidmodels
 local playerobj = {}
 local maxobjects = 1500
@@ -356,18 +358,21 @@ end
 addCommandHandler('mrinc', setRInc)
 
 function changeInc(player)
-	if minc[player] == 0.1 then	
+	if minc[player] == 1 then
+		minc[player] = 0.1
+		outputChatBox('Incriments set to 0.1', player)
+	elseif minc[player] == 0.1 then
 		minc[player] = 0.01
 		outputChatBox('Incriments set to 0.01', player)
 	elseif minc[player] == 0.01 then
 		minc[player] = 0.005
 		outputChatBox('Incriments set to 0.005', player)
 	elseif minc[player] == 0.005 then 
-		minc[player] = 0.1
-		outputChatBox('Incriments set to 0.1', player)
+		minc[player] = 1
+		outputChatBox('Incriments set to 1', player)
 	else
-		minc[player] = 0.1
-		outputChatBox('Incriments set to 0.1', player)
+		minc[player] = 1
+		outputChatBox('Incriments set to 1', player)
 	end
 end
 
@@ -955,10 +960,10 @@ addEventHandler('onResourceStart', resourceRoot,
 		fileClose(file)
 		
 		for k,v in ipairs(getElementsByType('player')) do
-			mrinc[v] = 15
-			minc[v] = 0.1
+			mrinc[v] = mrinc_default
+			minc[v] = minc_default
 		end
-		outputChatBox('offedit increments have been reset.')
+		outputChatBox('offedit increments set: minc = '..minc_default..'  mrinc = '..mrinc_default)
 		
 		local file = fileOpen('resourcemaps.json')
 		local size = fileGetSize(file)
@@ -1014,9 +1019,9 @@ addEventHandler('onPlayerJoin', root,
 				setElementData(source, 'builder', true)
 			end
 		end
-		mrinc[source] = 15
-		minc[source] = 0.1
-		outputChatBox('offedit increments set: minc = 0.1  mrinc = 15', source)
+		mrinc[source] = mrinc_default
+		minc[source] = minc_default
+		outputChatBox('offedit increments set: minc = '..minc[source]..'  mrinc = '..mrinc[source], source)
 	end
 )
 
