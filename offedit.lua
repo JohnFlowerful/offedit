@@ -293,6 +293,11 @@ function _moveObject(player, command, value, direction)
 			end
 		end
 		
+		local value = tonumber(value)
+		if type(value) ~= 'number' then
+			outputChatBox('SYNTAX: /'..command..' float', player)
+		end
+		
 		local x, y, z = getElementPosition(playerobj[player])
 		local orx, ory, orz = getElementRotation(playerobj[player])
 		local rx, ry, rz = 0, 0, 0
