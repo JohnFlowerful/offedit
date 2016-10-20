@@ -267,6 +267,9 @@ function bindMovementKeys(player)
 	for k,_ in pairs (movementkeys) do
 		bindKey(player, k, 'down', movementkeys[k].axis, 'false '..movementkeys[k].direction)
 	end
+	toggleControl(player, "special_control_left", false)
+	toggleControl(player, "special_control_right", false)
+	toggleControl(player, "look_behind", false)
 	bindKey(player, 'num_5', 'down',  changeInc)
 end
 
@@ -274,6 +277,9 @@ function unbindMovementKeys(player)
 	for k,_ in pairs (movementkeys) do
 		unbindKey(player, k, 'down', movementkeys[k].axis)
 	end
+	toggleControl(player, "special_control_left", true)
+	toggleControl(player, "special_control_right", true)
+	toggleControl(player, "look_behind", true)
 	unbindKey(player, 'num_5', 'down',  changeInc)
 end
 
