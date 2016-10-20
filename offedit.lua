@@ -964,8 +964,11 @@ addEventHandler('onResourceStart', resourceRoot,
 		local maps = fromJSON(buffer)
 		fileClose(file)
 		for k,_ in pairs (maps) do
-			for _,v in pairs (maps[k]) do
-				loadResourceMap(v, 0, 0, k)
+			local state = getResourceState(getResourceFromName(k))
+			if state == 'starting' or state == 'running' then
+				for _,v in pairs (maps[k]) do
+					loadResourceMap(v, 0, 0, k)
+				end
 			end
 		end
 	end
