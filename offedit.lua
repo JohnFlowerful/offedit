@@ -201,15 +201,8 @@ addCommandHandler('mloop',
 						local newx = orx + radi*math.sin(radians)*math.cos(rota)+(offset/2)*math.cos(radians/(2*loops))*-math.sin(rota)
 						local newy = ory +(offset/2)*math.cos(radians/(2*loops))*math.cos(rota)+radi*math.sin(radians)*math.sin(rota)
 						local newz = orz + radi*-math.cos(radians)
+						newi = newi + 1
 						angle = (((360/pieces)* loops)* newi)
-						if angle <= 359.9999999999999999999999999 then
-							newi = newi + 1
-						end
-						angle = (((360/pieces)* loops)* newi)
-						if angle >= 360 then
-							newi = 0
-							angle = (((360/pieces)* loops)* newi)
-						end
 						if rotaxis == 'x' then
 							newrotx = angle
 							newroty = ry --+((radians)-math.cos(rota)*spiralp*weight)
