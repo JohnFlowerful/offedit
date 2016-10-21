@@ -435,11 +435,12 @@ function destroyObject(player, command, id)
 			else
 				outputChatBox('Current object deleted.', player)
 			end
-			destroyElement(element)
-			if element == playerobj[player] then
-				updateGridlines(playerobj[player], true)
-				playerobj[player] = false
+			
+			local editing = getPlayersEditingObject(element)
+			for _,v in pairs (editing) do
+				playerobj[v] = false
 			end
+			destroyElement(element)
 		end
 	end
 end
@@ -472,7 +473,10 @@ function saveObject(player, command)
 			objects[id] = playerobj[player]
 			outputChatBox('Object saved as ID: ' ..id, player)
 			unbindMovementKeys(player)
-			updateGridlines(playerobj[player], false)
+			local editing = getPlayersEditingObject(playerobj[player])
+			if not (#editing > 1) then
+				updateGridlines(playerobj[player], false)
+			end
 			playerobj[player] = false
 		end
 	end
@@ -905,6 +909,16 @@ function unloadResourceMap(mapname, resource)
 		resourcemaps[resource][mapname] = nil
 		outputDebugString('(ADMIN.offedit) resource '..resource..' unloaded map '..mapname)
 	end
+end
+
+function getPlayersEditingObject(element)
+	local editing = {}
+	for k in pairs (playerobj) do
+		if element == playerobj[k] then
+			table.insert(editing, k)
+		end
+	end
+	return editing
 end
 
 function getTimeStamp ()
