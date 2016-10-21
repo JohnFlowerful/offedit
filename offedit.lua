@@ -249,8 +249,8 @@ addCommandHandler('mcol',
 )
 
 local movementkeys = {
-	num_4 = {axis = 'ox', direction = 1},
-	num_6 = {axis = 'ox', direction = -1},
+	num_4 = {axis = 'ox', direction = -1},
+	num_6 = {axis = 'ox', direction = 1},
 	num_8 = {axis = 'oy', direction = 1},
 	num_2 = {axis = 'oy', direction = -1},
 	num_add = {axis = 'oz', direction = 1},
