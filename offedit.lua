@@ -418,9 +418,9 @@ function destroyObject(player, command, id)
 			if playerobj[player] then
 				element = playerobj[player]
 				unbindMovementKeys(player)
-				for i=0,maxobjects do
-					if objects[i] == playerobj[player] then
-						num = i
+				for k in pairs (objects) do
+					if objects[k] == playerobj[player] then
+						num = k
 						break
 					end
 				end
