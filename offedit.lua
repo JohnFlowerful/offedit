@@ -440,6 +440,7 @@ function destroyObject(player, command, id)
 			for _,v in pairs (editing) do
 				playerobj[v] = false
 			end
+			updateGridlines(element, false)
 			destroyElement(element)
 		end
 	end
