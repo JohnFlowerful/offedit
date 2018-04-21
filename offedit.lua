@@ -9,6 +9,8 @@ local mrinc = {}
 local objects = {}
 local gridlines = {}
 local resourcemaps = {}
+local realx, realy, realz = {}, {}, {}
+local realrx, realry, realrz = {}, {}, {}
 
 local nyiggas = {
 	'A25B7706EE8A96E9CD6F9E66AC42B343' --ishi
@@ -47,15 +49,16 @@ addCommandHandler('mcreate',
 				if objectid then
 					local var = objectid
 					local x, y, z = getElementPosition(player)
+					local x, y, z = x + 2, y + 2, z
 					local int, dim = getElementInterior(player), getElementDimension(player)
 					if type(tonumber(var)) == 'number' then
 						local var = tonumber(var)
 						if var > 611 and var <= 20000 or (var <= 372 and var >= 321) then --objects
-							playerobj[player] = createObject(var, x + 2, y + 2, z - 1)
+							playerobj[player] = createObject(var, x, y, z)
 						elseif var <= 611 and var >= 400 then --vehicles
-							playerobj[player] = createVehicle(var, x + 2, y + 2, z + 1)
+							playerobj[player] = createVehicle(var, x, y, z)
 						elseif var <= 312 then --peds
-							playerobj[player] = createPed(var, x + 2, y + 2, z + 1)
+							playerobj[player] = createPed(var, x, y, z)
 						end
 					else
 						if var == 'water' then
@@ -67,7 +70,7 @@ addCommandHandler('mcreate',
 						else
 							local veh = getVehicleModelFromName(var)
 							if veh then
-								playerobj[player] = createVehicle(veh, x + 2, y + 2, z + 1)
+								playerobj[player] = createVehicle(veh, x, y, z)
 							end
 						end
 					end
@@ -79,6 +82,7 @@ addCommandHandler('mcreate',
 						if getElementType(playerobj[player]) == 'vehicle' or getElementType(playerobj[player]) == 'ped' then
 							setElementFrozen(playerobj[player], true)
 						end
+						setRealValues(playerobj[player], x, y, z, 0, 0, 0)
 						updateGridlines(playerobj[player], true)
 					else
 						outputChatBox(var.. ' is not a valid model ID.', player)
@@ -141,16 +145,23 @@ addCommandHandler('mclone',
 						for i=1,times do
 							local x, y, z = getElementPosition(playerobj[player])
 							local rx, ry, rz = getElementRotation(playerobj[player])
+							local scalex, scaley, scalez = getObjectScale(playerobj[player])
+							local collon = getElementCollisionsEnabled(playerobj[player])
+							local newx, newy, newz = x + addx, y + addy, z + addz
+							local newrx, newry, newrz = rx + addrx, ry + addry, rz + addrz
 							saveObject(player)
 							if type == 'object' then
-								playerobj[player] = createObject(model, x + addx, y + addy, z + addz, rx + addrx, ry + addry, rz + addrz)
+								playerobj[player] = createObject(model, newx, newy, newz, newrx, newry, newrz)
+								setElementCollisionsEnabled (playerobj[player], collon) 
+								setObjectScale(playerobj[player], scalex, scaley, scalez)
 							elseif type == 'vehicle' then
-								playerobj[player] = createVehicle(model, x + addx, y + addy, z + addz, rx + addrx, ry + addry, rz + addrz)
+								playerobj[player] = createVehicle(model, newx, newy, newz, newrx, newry, newrz)
 								setElementFrozen(playerobj[player], true)
 							elseif type == 'ped' then
-								playerobj[player] = createPed(model, x + addx, y + addy, z + addz, addrz, true)
+								playerobj[player] = createPed(model, newx, newy, newz, addrz, true)
 								setElementFrozen(playerobj[player], true)
 							end
+							setRealValues(playerobj[player], newx, newy, newz, newrx, newry, newrz)
 							setElementInterior(playerobj[player], int)
 							setElementDimension(playerobj[player], dim)
 							updateGridlines(playerobj[player], false)
@@ -171,7 +182,7 @@ addCommandHandler('mclone',
 	end
 )
 
-addCommandHandler('mloop',
+addCommandHandler('mloopold',
 	function (player, command, pieces, radi, offset, rotaxis, loops, rota)
 		if hasPerms(player) then 
 			local angle
@@ -218,16 +229,90 @@ addCommandHandler('mloop',
 						end
 						newz = newz + radi
 						playerobj[player] = createObject(model, newx, newy, newz, newrotx, newroty, rz)
+						setRealValues(playerobj[player], newx, newy, newz, newrotx, newroty, rz)
+
 						setElementInterior(playerobj[player], int)
 						setElementDimension(playerobj[player], dim)
 						updateGridlines(playerobj[player], true)
 					end
 				end
 				if not playerobj[player] then
-					outputChatBox('Failed to stack object.  Make sure you have one selected.', player)
+					outputChatBox('Failed to loop object.  Make sure you have one selected.', player)
 				end
 			else
 				outputChatBox('SYNTAX: /mloop pieces radius offset [rotaxis loops rota]', player)
+			end
+		end
+	end
+)
+
+addCommandHandler('mloop',
+	function (player, command, pieces, radi, offset, rotaxis, rota, loops)
+		if hasPerms(player) then
+			local angle
+			local newi
+			local loops = tonumber(loops) or 1
+			if rota then
+				rota = rota*(math.pi/180)
+			else
+				rota = 0
+			end
+			if radi and pieces and offset then
+				radi = tonumber(radi)
+				pieces = tonumber(pieces)
+				offset = tonumber(offset)
+				local spiralp = math.atan((offset/2)/(2*radi))/loops
+				if playerobj[player] then
+					local orx, ory, orz = getElementPosition(playerobj[player])
+					local int, dim = getElementInterior(player), getElementDimension(player)
+					newi = -1
+					for i=0,pieces do
+						local x, y, z = getElementPosition(playerobj[player])
+						local rx, ry, rz = getObjectRotation(playerobj[player])
+						local model = getElementModel(playerobj[player])
+						saveObject(player)
+						local weight = 1-(1/(pieces/2))*math.abs((pieces/2)-i)
+						local radians =(i/pieces)*(2*math.pi)*loops
+						--local newx = orx + radi*math.sin(radians)*math.cos(rota)+(offset/2)*math.cos(radians/(2*loops))*-math.sin(rota)
+						--local newy = ory +(offset/2)*math.cos(radians/(2*loops))*math.cos(rota)+radi*math.sin(radians)*math.sin(rota)
+						local newz = orz + radi*-math.cos(radians)
+						newi = newi + 1
+						angle = (((360/pieces)* loops)* newi)
+						if rotaxis == 'x' then
+							newrotx = angle
+							newroty = ry --+((radians)-math.cos(rota)*spiralp*weight)
+                            newx = x + (offset/pieces)
+                            newy = ory +(offset/2)*math.cos(radians/(2*loops))*math.cos(rota)+radi*math.sin(radians)*math.sin(rota)
+						elseif rotaxis == '-x' then
+							newrotx = -angle
+							newroty = ry --+((radians)-math.cos(rota)*spiralp*weight)
+                            newx = x - (offset/pieces)
+                            newy = ory +(offset/2)*math.cos(radians/(2*loops))*math.cos(rota)+radi*math.sin(radians)*math.sin(rota)
+						elseif rotaxis == 'y' then
+							newrotx = rx --+((radians)-math.cos(rota)*spiralp*weight)
+							newroty = angle
+                            newx = orx + radi*math.sin(radians)*math.cos(rota)+(offset/2)*math.cos(radians/(2*loops))*-math.sin(rota)
+                            newy = y + (offset/pieces)
+						elseif rotaxis == '-y' then
+							newrotx = rx --+((radians)-math.cos(rota)*spiralp*weight)
+							newroty = -angle
+                            newy = y - (offset/pieces)
+                            newx = orx + radi*math.sin(radians)*math.cos(rota)+(offset/2)*math.cos(radians/(2*loops))*-math.sin(rota)
+						end
+						newz = newz + radi
+						playerobj[player] = createObject(model, newx, newy, newz, newrotx, newroty, rz)
+						setRealValues(playerobj[player], newx, newy, newz, newrotx, newroty, rz)
+
+						setElementInterior(playerobj[player], int)
+						setElementDimension(playerobj[player], dim)
+						--updateGridlines(playerobj[player], true)
+					end
+                    saveObject(player)
+				else
+                    outputChatBox('Failed to loop object.  Make sure you have one selected.', player)
+                end
+			else
+				outputChatBox('SYNTAX: /mloop pieces radius offset [rotaxis rotation loops]', player)
 			end
 		end
 	end
@@ -293,22 +378,22 @@ function _moveObject(player, command, value, direction)
 				value = mrinc[player] * direction
 			end
 		end
-		
+
 		local value = tonumber(value)
 		if type(value) ~= 'number' then
 			outputChatBox('SYNTAX: /'..command..' float', player)
 		end
 		
-		local x, y, z = getElementPosition(playerobj[player])
-		local orx, ory, orz = getElementRotation(playerobj[player])
+		--local x, y, z = getElementPosition(playerobj[player])
+		local element = playerobj[player]
+
 		local rx, ry, rz = 0, 0, 0
-		local type = getElementType(playerobj[player])
 		if command == 'ox' then
-			x = x + value
+			realx[element] = realx[element] + value
 		elseif command == 'oy' then
-			y = y + value
+			realy[element] = realy[element] + value
 		elseif command == 'oz' then
-			z = z + value
+			realz[element] = realz[element] + value
 		elseif command == 'rx' then
 			rx = value
 		elseif command == 'ry' then
@@ -316,24 +401,29 @@ function _moveObject(player, command, value, direction)
 		elseif command == 'rz' then
 			rz = value
 		end
-		
+
+		local type = getElementType(element)
 		if command == 'ox' or command == 'oy' or command == 'oz' then
 			if type == 'object' then
-				moveObject(playerobj[player], 200, x, y, z)
+				moveObject(element, 200, realx[element], realy[element], realz[element])
 			elseif type == 'ped' or type == 'vehicle' then
-				setElementPosition(playerobj[player], x, y, z)
-				setElementFrozen(playerobj[player], true)
+				setElementPosition(element, realx[element], realy[element], realz[element])
+				setElementFrozen(element, true)
 			else
-				setElementPosition(playerobj[player], x, y, z)
+				setElementPosition(element, realx[element], realy[element], realz[element])
 			end
 		elseif command == 'rx' or command == 'ry' or command == 'rz' then
 			if type == 'object' then
-				moveObject(playerobj[player], 200, x, y, z, rx, ry, rz)
+				stopObject(element)
+				local currentrx, currentry, currentrz = getElementRotation(element)
+				local diffrx, diffry, diffrz = realrx[element] - currentrx, realry[element] - currentry, realrz[element] - currentrz
+				setRealRotValues(element, rx, ry, rz)
+				moveObject(element, 200, realx[element], realy[element], realz[element], rx + diffrx, ry + diffry, rz + diffrz)
 			elseif type == 'ped' or type == 'vehicle' then
-				setElementRotation(playerobj[player], rx + orx, ry + ory, rz + orz)
-				setElementFrozen(playerobj[player], true)
+				setElementRotation(element, rx + realrx[element], ry + realry[element], rz + realrz[element])
+				setElementFrozen(element, true)
 			else
-				setElementRotation(playerobj[player], rx + orx, ry + ory, rz + orz)
+				setElementRotation(element, rx + realrx[element], ry + realry[element], rz + realrz[element])
 			end
 		end
 	end
@@ -441,6 +531,7 @@ function destroyObject(player, command, id)
 				playerobj[v] = false
 			end
 			updateGridlines(element, false)
+			unsetRealValues(element)
 			destroyElement(element)
 		end
 	end
@@ -477,6 +568,7 @@ function saveObject(player, command)
 			local editing = getPlayersEditingObject(playerobj[player])
 			if not (#editing > 1) then
 				updateGridlines(playerobj[player], false)
+				unsetRealValues(playerobj[player])
 			end
 			playerobj[player] = false
 		end
@@ -495,6 +587,9 @@ addCommandHandler('msel',
 				playerobj[player] = objects[id]
 				bindMovementKeys(player)
 				updateGridlines(playerobj[player], true)
+				local x, y, z = getElementPosition(playerobj[player])
+				local rx, ry, rz = getElementRotation(playerobj[player])
+				setRealValues(playerobj[player], x, y, z, rx, ry, rz)
 				outputChatBox('Object ID selected: ' ..id.. '', player)
 			end
 		end
@@ -635,6 +730,8 @@ function clearPlayerObjects(player)
 			end
 		end
 		objects = {}
+		realx, realy, realz = {}, {}, {}
+		realrx, realry, realrz = {}, {}, {}
 		for k,v in ipairs (getElementsByType('player')) do
 			if playerobj[v] then
 				updateGridlines(playerobj[v], false)
@@ -750,8 +847,9 @@ addCommandHandler('loadmap',
 		if hasPerms(player) then
 			if fileExists('maps/'..mapname..'.json') then
 				clearPlayerObjects(player)
-				loadMap(mapname, objects, int or 0, dim or 0)
-				outputChatBox('Map loaded: ' ..mapname)
+				loadMap(mapname, objects, int or nil, dim or nil)
+				outputChatBox('New map loaded.')
+				outputChatBox('Map loaded: ' ..mapname, player)
 				outputDebugString('(ADMIN.offedit) player '..getPlayerName(player)..' loaded map '..mapname)
 			else
 				outputChatBox(mapname.. " doesn't exist", player)
@@ -888,6 +986,7 @@ function loadResourceMap(mapname, int, dim, resource)
 	end
 	
 	if fileExists('maps/'..mapname..'.json') then
+		local int, dim = int or nil, dim or nil
 		resourcemaps[resource][mapname] = {}
 		loadMap(mapname, resourcemaps[resource][mapname], int, dim)
 		outputDebugString('(ADMIN.offedit) resource '..resource..' loaded map '..mapname)
@@ -910,6 +1009,35 @@ function unloadResourceMap(mapname, resource)
 		resourcemaps[resource][mapname] = nil
 		outputDebugString('(ADMIN.offedit) resource '..resource..' unloaded map '..mapname)
 	end
+end
+
+function writeResourceMaps()
+	local maps = {}
+	for k in pairs (resourcemaps) do
+		maps[k] = {}
+		for k2 in pairs (resourcemaps[k]) do
+			table.insert(maps[k], k2)
+		end
+	end
+	local file = fileCreate('resourcemaps.json')
+	fileWrite(file, toJSON(maps))
+	fileClose(file)
+end
+
+function setRealValues(element, x, y, z, rx, ry, rz)
+	realx[element], realy[element], realz[element] = x, y, z
+	realrx[element], realry[element], realrz[element] = rx, ry, rz
+end
+
+function setRealRotValues(element, rx, ry, rz)
+	realrx[element] = (realrx[element] + rx) % 360
+	realry[element] = (realry[element] + ry) % 360
+	realrz[element] = (realrz[element] + rz) % 360
+end
+
+function unsetRealValues(element)
+	realx[element], realy[element], realz[element] = nil, nil, nil
+	realrx[element], realry[element], realrz[element] = nil, nil, nil
 end
 
 function getPlayersEditingObject(element)
@@ -984,7 +1112,7 @@ addEventHandler('onResourceStart', resourceRoot,
 		local buffer = fileRead(file, size)
 		local maps = fromJSON(buffer)
 		fileClose(file)
-		for k,_ in pairs (maps) do
+		for k in pairs (maps) do
 			local state = getResourceState(getResourceFromName(k))
 			if state == 'starting' or state == 'running' then
 				for _,v in pairs (maps[k]) do
@@ -1008,22 +1136,15 @@ addEventHandler('onResourceStop', root,
 				end
 				outputDebugString('(ADMIN.offedit) resource '..resource..' unloaded map '..k)
 			end
+			resourcemaps[resource] = nil
+			writeResourceMaps()
 		end
 	end
 )
 
 addEventHandler('onResourceStop', resourceRoot,
 	function (resource)
-		local maps = {}
-		for k in pairs (resourcemaps) do
-			maps[k] = {}
-			for k2 in pairs (resourcemaps[k]) do
-				table.insert(maps[k], k2)
-			end
-		end
-		local file = fileCreate('resourcemaps.json')
-		fileWrite(file, toJSON(maps))
-		fileClose(file) 
+		writeResourceMaps()
 	end
 )
 
