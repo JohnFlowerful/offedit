@@ -39,6 +39,19 @@ addCommandHandler('guestb',
 	end
 )
 
+addCommandHandler('mappers',
+	function (player)
+		local mappers = {}
+		for k,v in pairs(getElementsByType('player')) do
+			if getElementData(v, 'builder') == true or getElementData(v, 'staff') == true then
+				table.insert(mappers, getPlayerName(v))
+			end
+		end
+		outputChatBox('#0AC3F5Bob the builders: #e7d9b0'..table.concat(mappers, ", "),  player, 231, 217, 176, true)
+	end
+)
+
+
 addCommandHandler('mcreate',
 	function (player, command, objectid, width, depth, height)
 		if invalidmodels[objectid] then 
