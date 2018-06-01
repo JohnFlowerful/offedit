@@ -47,7 +47,11 @@ addCommandHandler('mappers',
 				table.insert(mappers, getPlayerName(v))
 			end
 		end
-		outputChatBox('#0AC3F5Bob the builders: #e7d9b0'..table.concat(mappers, ", "),  player, 231, 217, 176, true)
+		if #mappers > 0 then
+			outputChatBox('#0AC3F5Bob the builders: #e7d9b0'..table.concat(mappers, ", "),  player, 231, 217, 176, true)
+		else
+			outputChatBox('There are no builders',  player, 231, 217, 176, true)
+		end
 	end
 )
 
@@ -331,17 +335,34 @@ addCommandHandler('mloop',
 	end
 )
 
+local acceptstrings = {
+	yes = {['yes'] = true, ['true'] = true, ['1'] = true, ['y'] = true},
+	no = {['no'] = true, ['false'] = true, ['0'] = true, ['n'] = true}
+}
+
+function yayOrNay(str)
+	if acceptstrings.yes[string.lower(tostring(str))] then
+		return true, 'on'
+	end
+	return false, 'off'
+end
+
 addCommandHandler('mcol',
 	function (player, command, col)
 		if playerobj[player] then
-			local colon = tonumber(col)
-			if colon == 1 then
-				setElementCollisionsEnabled(playerobj[player], true)
-				outputChatBox('Collisions on', player)
-			elseif colon == 0 then
-				setElementCollisionsEnabled(playerobj[player], false)
-				outputChatBox('Collisions off', player)
-			end
+			local colon, str = yayOrNay(col)
+			setElementCollisionsEnabled(playerobj[player], colon)
+			outputChatBox('Object collisions '..str, player)
+		end
+	end
+)
+
+addCommandHandler('mbreak',
+	function (player, command, breakable)
+		if playerobj[player] then
+			local breakme, str = yayOrNay(breakable)
+			triggerClientEvent('setObjectBreakability', root, playerobj[player], breakme)
+			outputChatBox('Object breakability '..str, player)
 		end
 	end
 )

@@ -12,6 +12,13 @@ addEventHandler("updateGridlines", root,
 	end
 )
 
+addEvent("setObjectBreakability", true)
+addEventHandler("setObjectBreakability", root, 
+	function(object, bool)
+		setObjectBreakable(object, bool)
+	end
+)
+
 addCommandHandler('togglelines',
 	function ()
 		if RENDER then
