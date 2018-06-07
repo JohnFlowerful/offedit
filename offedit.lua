@@ -362,6 +362,7 @@ addCommandHandler('mbreak',
 		if playerobj[player] then
 			local breakme, str = yayOrNay(breakable)
 			triggerClientEvent('setObjectBreakability', root, playerobj[player], breakme)
+			setElementFrozen(playerobj[player], not breakme) -- some objects are 'broken' by physics. freezing them is a solution.
 			outputChatBox('Object breakability '..str, player)
 		end
 	end
